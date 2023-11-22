@@ -1,0 +1,22 @@
+<ion-header [translucent]="true">
+  <ion-toolbar style="background-color: #007bff;">
+    <ion-title style="text-align: center; font-size: 1.5rem; padding: 10px;">Favoritos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-list *ngIf="productosFavoritos.length > 0">
+    <ion-item *ngFor="let item of productosFavoritos" style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+      <ion-thumbnail slot="start">
+        <img [src]="item.photo" alt="Producto" style="max-width: 80px; max-height: 80px;">
+      </ion-thumbnail>
+      <ion-label>
+        <h2>{{ item.name }}</h2>
+        <p style="font-size: 1rem; ">Precio: {{ item.price | currency }}</p>
+      </ion-label>
+      <ion-button color="primary" fill="clear" (click)="agregarAlCarrito(item)">Agregar al Carrito</ion-button>
+      <ion-button color="danger" fill="clear" (click)="eliminarDeFavoritos(item)">Eliminar</ion-button>
+    </ion-item>
+  </ion-list>
+
+</ion-content>

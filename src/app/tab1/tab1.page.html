@@ -1,0 +1,66 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title> Productos </ion-title>
+
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-fab vertical="top" horizontal="end" slot="fixed" [edge]="true">
+    <ion-fab-button (click)="openAddProductPage()">
+      <ion-icon name="add"></ion-icon>
+
+    </ion-fab-button>
+
+  </ion-fab>
+  <ion-grid>
+    <ion-row>
+      <ion-col size="12">
+        <ion-select label="Tipo" [multiple]="true" interface="popover" label-placement="floating" [(ngModel)]="filter"
+          (ionChange)="filterProducts()">
+          <ion-select-option value="Abarrotes">
+            Abarrotes
+          </ion-select-option>
+          <ion-select-option value="Frutas y Verduras">
+            Frutas y Verduras
+          </ion-select-option>
+          <ion-select-option value="Limpieza">
+            Limpieza
+          </ion-select-option>
+          <ion-select-option value="Farmacia">
+            Farmacia
+          </ion-select-option>
+        </ion-select>
+      </ion-col>
+    </ion-row>
+
+    <ion-row>
+      <ion-col size="4" *ngFor="let product of productsFounds; index as i">
+        <ion-card>
+          <img [src]="product.photo+i" />
+          <ion-card-header>
+            <ion-card-title>
+              {{product.name}}
+              <ion-badge [color]="getColor(product.type)">{{product.type}}</ion-badge>
+            </ion-card-title>
+            <ion-card-subtitle>{{ product.price| currency }}</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            {{product.description}}
+          </ion-card-content>
+          <ion-button expand="block" (click)="addToCart(product, i)">
+            <ion-icon name="cart-outline"></ion-icon>
+          </ion-button>
+          <div style="display: flex;">
+            <ion-button expand="block" style="width: 50%" (click)="mostrarAlertaConfirmacion(i)">
+              <ion-icon name="trash-outline"></ion-icon>
+            </ion-button>
+            <ion-button expand="block" style="width: 50%" (click)="openUpdateProductPage(i)">
+              <ion-icon name="pencil-outline"></ion-icon>
+            </ion-button>
+          </div>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>

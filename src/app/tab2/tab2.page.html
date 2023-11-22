@@ -1,0 +1,30 @@
+<ion-header [translucent]="true">
+  <ion-toolbar style="background-color: #007bff; ">
+    <ion-title style="text-align: center; font-size: 1.5rem; padding: 10px;">Carrito de Compras</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-list *ngIf="carrito.length > 0">
+    <ion-item *ngFor="let item of carrito" style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+      <ion-thumbnail slot="start">
+        <img [src]="item.product.photo" alt="Producto" style="max-width: 80px; max-height: 80px;">
+      </ion-thumbnail>
+      <ion-label>
+        <h2>{{ item.product.name }}</h2>
+        <p style="font-size: 1rem;">Precio: {{ item.product.price | currency }}</p>
+        <p style="font-size: 1rem;">Cantidad: {{ item.quantity }}</p>
+        <p style="font-size: 1rem;">Total: {{ item.product.price * item.quantity | currency }}</p>
+      </ion-label>
+    </ion-item>
+    <ion-item-divider style="text-align: right; font-weight: bold;">
+      Total: <span style="float: right;">{{ calcularTotalCarrito() | currency }}</span>
+    </ion-item-divider>
+    <ion-item style="text-align: center;">
+      <ion-button expand="full" (click)="realizarPago()">Pagar</ion-button>
+    </ion-item>
+  </ion-list>
+
+  <!-- Mensaje si el carrito está vacío -->
+  <div *ngIf="carrito.length === 0" style="text-align: center; padding: 20px; font-size: 1.2rem; color: #888;">El carrito está vacío.</div>
+</ion-content>

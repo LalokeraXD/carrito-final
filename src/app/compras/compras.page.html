@@ -1,0 +1,34 @@
+<ion-header [translucent]="true">
+  <ion-toolbar style="background-color: #007bff; ">
+    <ion-title style="text-align: center; font-size: 1.5rem; padding: 10px;">Registro de compras</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list *ngIf="historialCompras.length > 0">
+    <ng-container *ngFor="let compra of historialCompras; let i = index">
+      <ion-item-divider style="font-weight: bold;">Fecha: {{ compra.fecha }}</ion-item-divider>
+      <ion-item-divider style="font-weight: bold;">Total de la Compra: {{ calcularTotalCompra(compra.productos) | currency }}</ion-item-divider>
+
+      <div style="overflow-x: auto; white-space: nowrap;">
+        <div style="display: inline-flex;">
+          <ion-item *ngFor="let item of compra.productos">
+          <ion-thumbnail slot="start">
+            <img [src]="item.product.photo" alt="Producto" style="max-width: 80px; max-height: 80px;">
+          </ion-thumbnail>
+          <ion-label>
+            <h2>{{ item.product.name }}</h2>
+            <p style="font-size: 1rem;">Precio: {{ item.product.price | currency }}</p>
+            <p style="font-size: 1rem;">Cantidad: {{ item.quantity }}</p>
+            <p style="font-size: 1rem;">Total: {{ item.product.price * item.quantity | currency }}</p>
+          </ion-label>
+          </ion-item>
+      </div>
+    </div>
+
+    <ion-item-divider *ngIf="i < historialCompras.length - 1" style="border-top: 1px solid #ccc;"></ion-item-divider>
+  </ng-container>
+</ion-list>
+
+<div *ngIf="historialCompras.length === 0" style="text-align: center; padding: 20px; font-size: 1.2rem; color: #888;">No hay compras registradas.</div>
+</ion-content>
