@@ -4,6 +4,7 @@ import { CartService } from '../services/cart.service';
 import { Router } from '@angular/router';
 import { ProductService } from '../services/product.service';
 import { AlertController, ToastController } from '@ionic/angular';
+import { FavoritosService } from '../services/favoritos.service';
 
 @Component({
   selector: 'app-tab1',
@@ -14,6 +15,7 @@ export class Tab1Page {
 
   public products: Product[] = [];
   public productsFounds: Product[] = [];
+  public car: { [productId: number]: { product: Product, quantity: number } } = {};
   public filter = [
     "Abarrotes",
     "Frutas y Verduras",
@@ -41,41 +43,42 @@ export class Tab1Page {
   ];
 
   constructor(
-    private cartService: CartService, 
+    private cartService: CartService,
+    private favoritosService: FavoritosService,
     private alertController: AlertController, 
     private router: Router, 
     private product: ProductService,
     private toastController: ToastController
     ) {
-    this.products.push({
-      name: "Aguacate",
-      price: 100,
-      description: "Lorem ipsum dolor sit amet.",
-      type: "Frutas y Verduras",
-      photo: "https://picsum.photos/500/300?random",
-    });
-    this.products.push({
-      name: "Coca Cola",
-      price: 20,
-      description: "Lorem ipsum dolor sit amet.",
-      type: "Abarrotes",
-      photo: "https://picsum.photos/500/300?random"
-    });
-    this.products.push({
-      name: "Jabón Zote",
-      price: 40,
-      description: "Lorem ipsum dolor sit amet.",
-      type: "Limpieza",
-      photo: "https://picsum.photos/500/300?random"
-    });
-    this.products.push({
-      name: "Aspirina",
-      price: 50,
-      description: "Lorem ipsum dolor sit amet.",
-      type: "Farmacia",
-      photo: "https://picsum.photos/500/300?random"
-    });
-    this.productsFounds = this.products;
+    // this.products.push({
+    //   name: "Aguacate",
+    //   price: 100,
+    //   description: "Lorem ipsum dolor sit amet.",
+    //   type: "Frutas y Verduras",
+    //   photo: "https://picsum.photos/500/300?random",
+    // });
+    // this.products.push({
+    //   name: "Coca Cola",
+    //   price: 20,
+    //   description: "Lorem ipsum dolor sit amet.",
+    //   type: "Abarrotes",
+    //   photo: "https://picsum.photos/500/300?random"
+    // });
+    // this.products.push({
+    //   name: "Jabón Zote",
+    //   price: 40,
+    //   description: "Lorem ipsum dolor sit amet.",
+    //   type: "Limpieza",
+    //   photo: "https://picsum.photos/500/300?random"
+    // });
+    // this.products.push({
+    //   name: "Aspirina",
+    //   price: 50,
+    //   description: "Lorem ipsum dolor sit amet.",
+    //   type: "Farmacia",
+    //   photo: "https://picsum.photos/500/300?random"
+    // });
+    // this.productsFounds = this.products;
     this.productsFounds = this.product.getProducts();
   }
 
@@ -96,10 +99,54 @@ export class Tab1Page {
     );
   }
 
-  public addToCart(product: Product, i: number) {
-    product.photo = product.photo + i;
-    this.cartService.addToCart(product);
-    console.log(this.cartService.getCart());
+  agregarAlCarrito(producto: Product): void {
+    this.cartService.agregarAlCarrito(producto);
+    this.mostrarMensaje("Producto agregado al carrito.");
+  }
+
+    public openAddProductPage(){
+    this.router.navigate(['/add-product']);
+  }
+  
+  public openUpdateProductPage(pos:number){
+    this.getpos(pos);
+    this.router.navigate(['/update-product']);
+  }
+  
+  public getpos(pos:number){
+    this.product.pos = pos;
+  }
+
+  public carritoVacio(): boolean {
+    return Object.keys(this.car).length === 0;
+  }
+
+  public get carritoArray(): { product: Product, quantity: number }[] {
+    return Object.values(this.car);
+  }
+
+  public calcularTotalCarrito(): number {
+    let total = 0;
+    for (const productId of Object.keys(this.car)) {
+      const producto = this.car[parseInt(productId)].product;
+      const quantity = this.car[parseInt(productId)].quantity;
+      total += producto.price * quantity;
+    }
+    return total;
+  }
+
+  agregarAlFavorito(producto: any) {
+    this.favoritosService.agregarFavorito(producto);
+    this.mostrarMensaje("Producto agregado a favoritos.");
+  }
+
+  async mostrarMensaje(mensaje: string) {
+    const toast = await this.toastController.create({
+      message: mensaje,
+      duration: 1000, // Duración del mensaje en milisegundos
+      position: 'bottom', // Posición del mensaje en la pantalla
+    });
+    toast.present();
   }
 
   async mostrarAlertaConfirmacion(pos:number) {
@@ -137,17 +184,5 @@ export class Tab1Page {
     toast.present();
   }
 
-  public openAddProductPage(){
-    this.router.navigate(['/add-product']);
-  }
   
-  public openUpdateProductPage(pos:number){
-    this.getpos(pos);
-    this.router.navigate(['/update-product']);
-  }
-  
-  public getpos(pos:number){
-    this.product.pos = pos;
-  }
-
 }

@@ -34,7 +34,7 @@
       </ion-col>
     </ion-row>
 
-    <ion-row>
+    <!-- <ion-row>
       <ion-col size="4" *ngFor="let product of productsFounds; index as i">
         <ion-card>
           <img [src]="product.photo+i" />
@@ -61,6 +61,38 @@
           </div>
         </ion-card>
       </ion-col>
+    </ion-row> -->
+    <ion-row>
+      <div *ngFor="let product of productsFounds; index as i">
+        <ion-col size="6" size-xs="12">
+          <ion-card>
+            <img [src]="product.photo" />
+            <ion-card-header>
+              <ion-card-title>
+                {{product.name}}
+                <ion-badge [color]="getColor(product.type)">{{product.type}}</ion-badge>
+              </ion-card-title>
+              <ion-card-subtitle>{{ product.price | currency }}</ion-card-subtitle>
+            </ion-card-header>
+            <ion-card-content>
+              {{product.description}}
+            </ion-card-content>
+            <ion-button (click)="agregarAlCarrito(product)" expand="block" color="primary">Agregar al carrito</ion-button>
+            <ion-button (click)="agregarAlFavorito(product)" expand="block" color="primary">
+              <ion-icon name="star"></ion-icon> Agregar a favoritos
+            </ion-button>
+            <div style="display: flex;">
+              <ion-button expand="block" style="width: 50%" (click)="mostrarAlertaConfirmacion(i)">
+                <ion-icon name="trash-outline"></ion-icon>
+              </ion-button>
+              <ion-button expand="block" style="width: 50%" (click)="openUpdateProductPage(i)">
+                <ion-icon name="pencil-outline"></ion-icon>
+              </ion-button>
+            </div>
+          </ion-card>
+        </ion-col>
+      </div>
     </ion-row>
+
   </ion-grid>
 </ion-content>

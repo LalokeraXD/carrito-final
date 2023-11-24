@@ -1,67 +1,51 @@
 import { Injectable } from '@angular/core';
-import { Cart, Product, CartItem } from '../models/product.model';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { Product } from '../models/product.model';
+import { Purchase } from '../models/purchase.interface';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class CartService {
+  private carrito: { product: Product, quantity: number }[] = [];
+  private carritoSubject: BehaviorSubject<{ product: Product, quantity: number }[]> = new BehaviorSubject(this.carrito);
+  private historialCompras: Purchase[] = [];
 
-  private cart: Cart = {
-    items: [],
-    total: 0,
-    itemCount: 0
-  };
+  constructor() {}
 
-  constructor() { }
+  public registrarCompra(): void {
+    const compra: Purchase = {
+      fecha: new Date().toLocaleDateString(),
+      productos: this.carrito.slice() // Clonar los productos en el carrito para la compra
+    };
 
-  public getCart(): Cart {
-    return this.cart;
+    this.historialCompras.push(compra);
+    this.carrito = []; // Vaciar el carrito después de la compra
+    this.carritoSubject.next(this.carrito);
   }
 
-  public addToCart(product: Product): Cart {
+  public obtenerHistorialCompras(): Purchase[] {
+    return this.historialCompras;
+  }
 
-    const existingCartItem = this.cart.items.find((item) => item.product.name === product.name);
+  public agregarAlCarrito(producto: Product): void {
+    const productoEnCarrito = this.carrito.find((item) => item.product.id === producto.id);
 
-    if (existingCartItem) {
-      // El producto ya existe en el carrito, actualiza la cantidad
-      existingCartItem.quantity += 1;
+    if (productoEnCarrito) {
+      productoEnCarrito.quantity++;
     } else {
-      // El producto no existe en el carrito, agrégalo como un nuevo elemento
-      const newItem: CartItem = {
-        product: product,
-        quantity: 1,
-      };
-      this.cart.items.push(newItem);
+      this.carrito.push({ product: producto, quantity: 1 });
     }
 
-    // Actualiza el total y la cantidad de artículos
-    this.cart.total = this.calculateTotal(this.cart);
-    this.cart.itemCount = this.calculateItemCount(this.cart);
-
-    return this.cart;
+    this.carritoSubject.next(this.carrito);
   }
 
-  private calculateTotal(cart: Cart): number {
-    return cart.items.reduce((total, item) => total + item.product.price * item.quantity, 0);
+  public obtenerCarrito(): Observable<{ product: Product, quantity: number }[]> {
+    return this.carritoSubject.asObservable();
   }
 
-  private calculateItemCount(cart: Cart): number {
-    return cart.items.reduce((count, item) => count + item.quantity, 0);
-  }
-
-  public removeItemFromCart(item: CartItem, quantityToRemove: number) {
-    const index = this.cart.items.findIndex((cartItem) => cartItem === item);
-    if (index !== -1) {
-      if (item.quantity > quantityToRemove) {
-        item.quantity -= quantityToRemove;
-      } else {
-        // Si la cantidad a eliminar es igual o mayor que la cantidad en el carrito, elimina el elemento por completo.
-        this.cart.items.splice(index, 1);
-      }
-  
-      // Actualiza el total y la cantidad de artículos
-      this.cart.total = this.calculateTotal(this.cart);
-      this.cart.itemCount = this.calculateItemCount(this.cart);
-    }
+  public vaciarCarrito(): void {
+    this.carrito = [];
+    this.carritoSubject.next(this.carrito);
   }
 }
