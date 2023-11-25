@@ -27,9 +27,10 @@ const routes: Routes = [
     loadChildren: () => import('./login/login.module').then( m => m.LoginPageModule)
   },
   {
-    path: 'update-product',
+    path: 'update-product/:id',
     loadChildren: () => import('./update-product/update-product.module').then( m => m.UpdateProductPageModule)
-  }
+  },
+  
  
 ];
 @NgModule({

@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { ProductService } from '../services/product.service';
 import { AlertController, ToastController } from '@ionic/angular';
 import { FavoritosService } from '../services/favoritos.service';
+import { map } from 'rxjs';
 
 @Component({
   selector: 'app-tab1',
@@ -47,7 +48,7 @@ export class Tab1Page {
     private favoritosService: FavoritosService,
     private alertController: AlertController, 
     private router: Router, 
-    private product: ProductService,
+    private productService: ProductService,
     private toastController: ToastController
     ) {
     // this.products.push({
@@ -79,14 +80,17 @@ export class Tab1Page {
     //   photo: "https://picsum.photos/500/300?random"
     // });
     // this.productsFounds = this.products;
-    this.productsFounds = this.product.getProducts();
+    // this.productsFounds = this.product.getProducts();
+    this.productService.getProducts().subscribe(products => {
+      this.productsFounds = products;
+    });
   }
 
   public getColor(type: string): string {
     const itemFound = this.colors.find((element) => {
       return element.type === type;
     });
-    let color = itemFound && itemFound.color ? itemFound.color : "";
+    let color = itemFound && itemFound.color ? itemFound.color : '';
     return color;
   }
 
@@ -101,31 +105,46 @@ export class Tab1Page {
 
   agregarAlCarrito(producto: Product): void {
     this.cartService.agregarAlCarrito(producto);
-    this.mostrarMensaje("Producto agregado al carrito.");
+    this.mostrarMensaje('Producto agregado al carrito.');
   }
 
-    public openAddProductPage(){
+  openAddProductPage() {
     this.router.navigate(['/add-product']);
   }
-  
-  public openUpdateProductPage(pos:number){
-    this.getpos(pos);
-    this.router.navigate(['/update-product']);
-  }
-  
-  public getpos(pos:number){
-    this.product.pos = pos;
+
+  // openUpdateProductPage(pos: number) {
+  //   this.productService.pos = pos;
+
+  //   // Obtén el producto desde el array observable
+  //   this.productService.getProducts().pipe(
+  //     map(products => products[pos])
+  //   ).subscribe(product => {
+  //     // Envía la información del producto al servicio
+  //     this.productService.setProductToUpdate(product);
+
+  //     // Redirige a la página de actualización
+  //     this.router.navigate(['/update-product']);
+  //   });
+  // }
+
+  openUpdateProductPage(prod: Product) {
+    console.log(prod);
+    this.router.navigate(['/update-product', prod.id]);
+  }  
+
+  getpos(id: string) {
+    this.productService.id = id;
   }
 
-  public carritoVacio(): boolean {
+  carritoVacio(): boolean {
     return Object.keys(this.car).length === 0;
   }
 
-  public get carritoArray(): { product: Product, quantity: number }[] {
+  get carritoArray(): { product: Product, quantity: number }[] {
     return Object.values(this.car);
   }
 
-  public calcularTotalCarrito(): number {
+  calcularTotalCarrito(): number {
     let total = 0;
     for (const productId of Object.keys(this.car)) {
       const producto = this.car[parseInt(productId)].product;
@@ -137,7 +156,7 @@ export class Tab1Page {
 
   agregarAlFavorito(producto: any) {
     this.favoritosService.agregarFavorito(producto);
-    this.mostrarMensaje("Producto agregado a favoritos.");
+    this.mostrarMensaje('Producto agregado a favoritos.');
   }
 
   async mostrarMensaje(mensaje: string) {
@@ -149,7 +168,7 @@ export class Tab1Page {
     toast.present();
   }
 
-  async mostrarAlertaConfirmacion(pos:number) {
+  async mostrarAlertaConfirmacion(prod: Product) {
     const alert = await this.alertController.create({
       header: 'Confirmar eliminación',
       message: '¿Estás seguro de que deseas eliminar este elemento?',
@@ -158,29 +177,29 @@ export class Tab1Page {
           text: 'Cancelar',
           role: 'cancel',
           handler: () => {
-            
+
           }
         },
         {
           text: 'Eliminar',
           handler: () => {
+            this.productService.removeProduct(prod.id);
             this.msgDeleted();
-            this.product.removeProduct(pos);
           }
         }
       ]
     });
-  
+
     await alert.present();
   }
 
-  public async msgDeleted(){
+  async msgDeleted() {
     const toast = await this.toastController.create({
       message: 'Producto eliminado',
       duration: 1000,
       position: 'bottom'
     });
-    
+
     toast.present();
   }
 
