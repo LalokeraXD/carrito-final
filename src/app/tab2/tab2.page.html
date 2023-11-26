@@ -18,6 +18,7 @@
         <p style="font-size: 1rem;">Cantidad: {{ item.quantity }}</p>
         <p style="font-size: 1rem;">Total: {{ item.product.price * item.quantity | currency }}</p>
       </ion-label>
+      <ion-button (click)="eliminarProducto(item.product)">Eliminar</ion-button>
     </ion-item>
     <ion-item-divider style="text-align: right; font-weight: bold;">
       Total: <span style="float: right;">{{ calcularTotalCarrito() | currency }}</span>

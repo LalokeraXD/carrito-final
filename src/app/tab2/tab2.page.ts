@@ -98,4 +98,32 @@ export class Tab2Page implements OnInit {
     });
     toast.present();
   }
+
+  async eliminarProducto(producto: Product): Promise<void> {
+    // Verifica si la cantidad del producto en el carrito es mayor que 1
+    const productoEnCarrito = this.carrito.find((item) => item.product.id === producto.id);
+  
+    if (productoEnCarrito) {
+      if (productoEnCarrito.quantity > 1) {
+        // Disminuye la cantidad en uno
+        productoEnCarrito.quantity--;
+      } else {
+        // Si la cantidad es 1, elimina el producto del carrito y de Firestore
+        const nombreUsuario = this.cartService.getNombreUsuario();
+        if (nombreUsuario) {
+          await this.cartService.eliminarProductoDelCarrito(producto.id);
+        }
+      }
+  
+      // Actualiza el carrito en Firestore
+      await this.cartService.actualizarCarritoFirestore(
+        this.cartService.getNombreUsuario(),
+        this.carrito
+      );
+  
+      // Actualiza la vista
+      this.cdr.detectChanges();
+    }
+  }
+  
 }

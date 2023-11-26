@@ -110,14 +110,15 @@ export class CartService {
     this.carritoSubject.next(this.carrito);
   }
   
-  private async actualizarCarritoFirestore(nombreUsuario: string, carrito: { product: Product; quantity: number }[]): Promise<void> {
+  
+  public async actualizarCarritoFirestore(nombreUsuario: string, carrito: { product: Product; quantity: number }[]): Promise<void> {
     const carritoDocRef = this.firestore.collection('carrito').doc(nombreUsuario);
-
+  
     const carritoData = {
       user: nombreUsuario,
       products: carrito.map(item => ({ id: item.product.id, cant: item.quantity }))
     };
-
+  
     await carritoDocRef.set(carritoData, { merge: true });
   }
 
@@ -134,4 +135,39 @@ export class CartService {
     this.carrito = [];
     this.carritoSubject.next(this.carrito);
   }
+
+  public async eliminarProductoDelCarrito(productId: string): Promise<void> {
+    const nombreUsuario = this.getNombreUsuario();
+  
+    if (!nombreUsuario) {
+      console.error('Nombre de usuario no válido.');
+      return;
+    }
+  
+    // Elimina el producto del carrito local
+    const index = this.carrito.findIndex(item => item.product.id === productId);
+    if (index !== -1) {
+      this.carrito.splice(index, 1);
+      this.carritoSubject.next(this.carrito);
+    }
+  
+    // Elimina el producto de la colección en Firestore
+    const carritoDocRef = this.firestore.collection('carrito').doc(nombreUsuario);
+    try {
+      const carritoFirestore = await carritoDocRef.get().toPromise();
+  
+      if (carritoFirestore) {
+        const carritoData = carritoFirestore.data() as { products?: { id: string; cant: number }[] };
+  
+        if (carritoData && carritoData.products) {
+          const productosActualizados = carritoData.products.filter((item: any) => item.id !== productId);
+          await carritoDocRef.set({ products: productosActualizados }, { merge: true });
+        }
+      }
+    } catch (error) {
+      console.error('Error al eliminar el producto del carrito:', error);
+    }
+  }
+  
+  
 }
