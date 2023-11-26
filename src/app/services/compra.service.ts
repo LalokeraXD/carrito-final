@@ -25,7 +25,7 @@ export class CompraService {
     this.historialComprasSubject.next(this.historialCompras);
   }
 
-  public obtenerHistorialCompras(): Observable<{ product: Product, quantity: number }[]> {
-    return this.historialComprasSubject.asObservable();
+  obtenerHistorialCompras(): Observable<any[]> {
+    return this.comprasCollection.valueChanges();
   }
 }

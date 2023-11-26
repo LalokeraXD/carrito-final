@@ -12,8 +12,10 @@ export class CartService {
   private carrito: { product: Product; quantity: number }[] = [];
   private carritoSubject = new BehaviorSubject<{ product: Product; quantity: number }[]>([]);
   private historialCompras: Purchase[] = [];
-  private nombreUsuario: string = 'admin';
+  private nombreUsuario: string = this.getNombreUsuario();
   private carritoCollection: AngularFirestoreCollection<any>;
+  private nombreUsuarioSubject = new BehaviorSubject<string>('');
+  nombreUsuarioObservable: Observable<string> = this.nombreUsuarioSubject.asObservable();
 
   constructor(
     private firestore: AngularFirestore,
@@ -120,6 +122,7 @@ export class CartService {
   }
 
   public setNombreUsuario(username: string): void {
+    this.nombreUsuarioSubject.next(username);
     this.nombreUsuario = username;
   }
 
