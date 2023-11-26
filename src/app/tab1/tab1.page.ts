@@ -155,7 +155,7 @@ export class Tab1Page {
   }
 
   agregarAlFavorito(producto: any) {
-    this.favoritosService.agregarFavorito(producto);
+    this.favoritosService.agregarFavorito(producto, this.cartService.getNombreUsuario());
     this.mostrarMensaje('Producto agregado a favoritos.');
   }
 

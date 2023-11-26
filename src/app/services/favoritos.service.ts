@@ -1,28 +1,52 @@
 import { Injectable } from '@angular/core';
+import { AngularFirestore } from '@angular/fire/compat/firestore';
+import firebase from 'firebase/compat/app'; // Importa firebase
+
+interface FavoritosDoc {
+  products?: any[]; // Ajusta esto según la estructura real de tus documentos
+}
 
 @Injectable({
   providedIn: 'root'
 })
+
 export class FavoritosService {
-  favoritos: any[] = [];
+  constructor(private firestore: AngularFirestore) {}
 
-  agregarFavorito(producto: any) {
-    // Verificar si el producto ya está en la lista de favoritos
-    const productoExistente = this.favoritos.find(item => item.id === producto.id);
+  async agregarFavorito(producto: any, usuario: string): Promise<void> {
+    const favoritosDocRef = this.firestore.collection('favoritos').doc(usuario).ref;
 
-    if (!productoExistente) {
-      this.favoritos.push(producto);
-    }
+    return this.firestore.firestore.runTransaction(async (transaction) => {
+      const favoritosDoc = await transaction.get(favoritosDocRef);
+
+      let products: any[] = [];
+      if (favoritosDoc.exists) {
+        const existingProducts = (favoritosDoc.data() as FavoritosDoc)?.products || [];
+        products = [...existingProducts, producto];
+      } else {
+        products = [producto];
+      }
+
+      transaction.update(favoritosDocRef, { products: firebase.firestore.FieldValue.arrayUnion(producto) });
+    });
   }
 
-  obtenerFavoritos() {
-    return this.favoritos;
+  obtenerFavoritos(usuario: string): any {
+    return this.firestore.collection('favoritos').doc(usuario).valueChanges();
   }
 
-  eliminarFavorito(producto: any) {
-    const indice = this.favoritos.findIndex(item => item.id === producto.id);
-    if (indice !== -1) {
-      this.favoritos.splice(indice, 1);
-    }
+  async eliminarFavorito(producto: any, usuario: string): Promise<void> {
+    const favoritosDocRef = this.firestore.collection('favoritos').doc(usuario).ref;
+
+    return this.firestore.firestore.runTransaction(async (transaction) => {
+      const favoritosDoc = await transaction.get(favoritosDocRef);
+
+      if (favoritosDoc.exists) {
+        const existingProducts = (favoritosDoc.data() as FavoritosDoc)?.products || [];
+        const updatedProducts = existingProducts.filter((item: any) => item.id !== producto.id);
+
+        transaction.update(favoritosDocRef, { products: firebase.firestore.FieldValue.arrayRemove(producto) });
+      }
+    });
   }
 }
