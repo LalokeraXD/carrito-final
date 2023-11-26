@@ -1,23 +1,31 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { Product } from '../models/product.model';
 import { Purchase } from '../models/purchase.interface';
-import { AngularFirestore } from '@angular/fire/compat/firestore';
+import { AngularFirestore, AngularFirestoreCollection } from '@angular/fire/compat/firestore';
+import { CompraService } from './compra.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CartService {
-  private carrito: { product: Product, quantity: number }[] = [];
+  private carrito: { product: Product; quantity: number }[] = [];
   private carritoSubject = new BehaviorSubject<{ product: Product; quantity: number }[]>([]);
   private historialCompras: Purchase[] = [];
   private nombreUsuario: string = 'admin';
+  private carritoCollection: AngularFirestoreCollection<any>;
 
-  constructor(private firestore: AngularFirestore) {}
+  constructor(
+    private firestore: AngularFirestore,
+    private compraService: CompraService
+    ) {
+    this.carritoCollection = this.firestore.collection('carrito');
+  }
 
   public registrarCompra(): void {
     const compra: Purchase = {
-      fecha: new Date().toLocaleDateString(),
+      fecha: new Date(),
+      user: this.nombreUsuario,
       productos: this.carrito.slice() // Clonar los productos en el carrito para la compra
     };
 
@@ -26,64 +34,61 @@ export class CartService {
     this.carritoSubject.next(this.carrito);
   }
 
+  public async realizarCompra(): Promise<void> {
+    // Registra la compra
+    const compra: Purchase = {
+      fecha: new Date(),
+      user: this.getNombreUsuario(), // Agrega el nombre del usuario
+      productos: this.carrito.slice(), // Clonar los productos en el carrito para la compra
+    };
+
+    // Agrega la compra a la colección "compras" en Firestore
+    await this.compraService.agregarCompra(compra);
+
+    // Vacía el carrito después de la compra
+    this.vaciarCarrito();
+
+    // Actualiza el carrito en Firestore (vacío)
+    const nombreUsuario = this.getNombreUsuario();
+    if (nombreUsuario) {
+      await this.actualizarCarritoFirestore(nombreUsuario, []);
+    }
+  }
+
   public obtenerHistorialCompras(): Purchase[] {
     return this.historialCompras;
   }
 
-  public getCarrito(): Observable<{ product: Product; quantity: number }[]> {
+  public getCarrito(): Observable<{ product: { id: string }; quantity: number }[]> {
     const nombreUsuario = this.getNombreUsuario();
   
-    if (nombreUsuario) {
-      const carritoDocRef = this.firestore.collection('carrito').doc(nombreUsuario);
-  
-      return carritoDocRef.valueChanges().pipe(
-        switchMap((carritoFirestore: any) => {
-          if (carritoFirestore && carritoFirestore.products) {
-            const productsData: { id: string; cant: number }[] = carritoFirestore.products;
-  
-            const productDetailsObservables = productsData.map(item => {
-              const productDocRef = this.firestore.collection('products').doc(item.id);
-  
-              return productDocRef.valueChanges().pipe(
-                map((productData: any) => {
-                  if (productData) {
-                    return {
-                      product: {
-                        id: item.id,
-                        name: productData.name,
-                        price: productData.price,
-                        description: productData.description,
-                        photo: productData.photo,
-                        type: productData.type,
-                      },
-                      quantity: item.cant
-                    };
-                  } else {
-                    console.error('Producto no encontrado:', item.id);
-                    return null;
-                  }
-                }),
-                catchError((error) => {
-                  console.error('Error al obtener detalles del producto:', error);
-                  return of(null);
-                })
-              );
-            });
-  
-            return forkJoin(productDetailsObservables).pipe(
-              // Filtrar elementos nulos y convertir a array final
-              map(products => products.filter(product => product !== null) as { product: Product; quantity: number }[])
-            );
-          } else {
-            return of([]); // Retorna un observable vacío si no hay productos en el carrito
-          }
-        })
-      );
-    } else {
-      return of([]); // Retorna un observable vacío si no hay nombre de usuario
+    if (!nombreUsuario) {
+      console.error('Nombre de usuario no válido.');
+      return of([]); // Retorna un array vacío si no hay nombre de usuario
     }
-  }
   
+    const carritoDocRef = this.firestore.collection('carrito').doc(nombreUsuario);
+  
+    return carritoDocRef.valueChanges().pipe(
+      map((carritoFirestore: any) => {
+        if (!carritoFirestore || !carritoFirestore.products) {
+          console.error('No hay productos en el carrito.');
+          return [];
+        }
+  
+        return carritoFirestore.products.map((item: { id: string, cant: number }) => {
+          return {
+            product: { id: item.id },
+            quantity: item.cant || 0
+          } as { product: { id: string }; quantity: number };
+        });
+      }),
+      catchError((error) => {
+        console.error('Error al obtener datos del carrito:', error);
+        return of([]); // Retorna un array vacío en caso de error
+      })
+    );
+  }
 
   public async agregarAlCarrito(producto: Product): Promise<void> {
     const productoEnCarrito = this.carrito.find((item) => item.product.id === producto.id);

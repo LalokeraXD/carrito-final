@@ -1,4 +1,3 @@
-// compras.page.ts
 import { Component, OnInit } from '@angular/core';
 import { Purchase } from '../models/purchase.interface';
 import { Product } from '../models/product.model';

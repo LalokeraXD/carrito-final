@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Product } from '../models/product.model';
 import { ToastController } from '@ionic/angular';
 import { CompraService } from '../services/compra.service';
 import { CartService } from '../services/cart.service';
+import { ProductService } from '../services/product.service';
 
 @Component({
   selector: 'app-tab2',
@@ -11,65 +12,83 @@ import { CartService } from '../services/cart.service';
 })
 export class Tab2Page implements OnInit {
   public carrito: { product: Product; quantity: number }[] = [
-    // {
-    //   product: {
-    //     id: '1',
-    //     name: 'Producto 1',
-    //     price: 10.99,
-    //     description: 'Descripción del Producto 1',
-    //     photo: 'https://picsum.photos/500/300?random=5',
-    //     type: 'Tipo 1'
-    //   },
-    //   quantity: 2
-    // },
-    // {
-    //   product: {
-    //     id: '2',
-    //     name: 'Producto 2',
-    //     price: 19.99,
-    //     description: 'Descripción del Producto 2',
-    //     photo: 'https://picsum.photos/500/300?random=5',
-    //     type: 'Tipo 2'
-    //   },
-    //   quantity: 1
-    // },
+  //   {
+  //     products: [{
+  //       id: '1adggdr4',
+  //       quantity: 2
+  //     },
+  //     {
+  //       id: 'asfad1r32',
+  //       quantity: 1
+  //     },
+  //     {
+  //       id: 'gds561',
+  //       quantity: 3
+  //     }
+  // ],
+  //   user: 'admin'
+  // }
   ];
 
   constructor(
     private toastController: ToastController,
     private compraService: CompraService,
     private cartService: CartService,
+    private cdr: ChangeDetectorRef,
+    private productService: ProductService,
   ) {}
 
   ngOnInit(): void {
     this.obtenerCarrito();
-    console.log(this.carrito);
   }
-
+  
   async obtenerCarrito() {
-    this.cartService.getCarrito().subscribe((carrito) => {
-      this.carrito = carrito;
+    this.cartService.getCarrito().subscribe(async (carrito) => {
+      console.log('Datos del carrito en obtenerCarrito:', carrito);
+  
+      if (carrito && carrito.length > 0) {
+        const carritoDetails = await Promise.all(carrito.map(async (item) => {
+          const product = await this.productService.getProductById(item.product.id);
+  
+          if (product) {
+            return {
+              product: {
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                description: product.description,
+                type: product.type,
+                photo: product.photo,
+              },
+              quantity: item.quantity || 0
+            };
+          } else {
+            // Manejar el caso en que no se pueda obtener el producto
+            return null;
+          }
+        }));
+  
+        // Filter out null values
+        this.carrito = carritoDetails.filter((item) => item !== null) as { product: Product; quantity: number }[];
+      } else {
+        // Manejar el caso en que no hay productos en el carrito
+        this.carrito = [];
+      }
     });
   }
-
+  
+  
   calcularTotalCarrito(): number {
     return this.carrito.reduce((total, item) => total + item.product.price * item.quantity, 0);
   }
 
   async realizarPago() {
-    // Puedes implementar la lógica para el pago aquí
-    // Por ahora, solo mostraremos un mensaje
-    const toast = await this.toastController.create({
-      message: 'Pago realizado con éxito',
-      duration: 2000,
-      position: 'bottom',
-    });
-
-    toast.present();
-
-    // Luego de realizar el pago, puedes vaciar el carrito
-    this.cartService.vaciarCarrito();
-  }  
+    // Llamada al servicio para realizar la compra
+    await this.cartService.realizarCompra();
+  
+    // Mostrar mensaje
+    this.mostrarMensaje('Pago realizado con éxito');
+  } 
 
   async mostrarMensaje(mensaje: string) {
     const toast = await this.toastController.create({
